@@ -37,3 +37,6 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.vspigs
+
+# Prisma Client
+./src/generated/prisma

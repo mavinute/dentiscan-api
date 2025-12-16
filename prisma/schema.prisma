@@ -1,0 +1,163 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  DENTIST
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  CANCELED
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+}
+
+enum RequestStatus {
+  PENDING
+  SENT_TO_CLINIC
+  WAITING_UPLOAD
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+  REJECTED
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  passwordHash  String
+  role          Role     @default(DENTIST)
+  address       String
+  phone         String
+  isRadiography Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  subscriptions Subscription?
+
+  patients      Patient[]
+
+  requestedBy   RadiographyRequest[] @relation("RequestedBy")
+  assignedTo    RadiographyRequest[] @relation("AssignedTo")
+
+  radiographies Radiography[]        @relation("UploadedBy")
+
+  @@map("users")
+  @@index([email])
+}
+
+model Subscription {
+  id        String             @id @default(uuid())
+  userId    String             @unique
+  status    SubscriptionStatus @default(PENDING)
+  plan      SubscriptionPlan   @default(FREE)
+  startedAt DateTime?
+  endedAt   DateTime?
+
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Patient {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  birthDate   DateTime
+  cpf         String
+  address     String
+  phone       String
+  notes       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  radiographyRequests RadiographyRequest[]
+
+  @@map("patients")
+  @@unique([cpf, createdById])
+  @@index([cpf])
+}
+
+model RadiographyRequest {
+  id            String        @id @default(uuid())
+  patientId     String
+  requestedById String
+  assignedToId  String?
+
+  status        RequestStatus @default(PENDING)
+  modality      String?
+  priority      Int?
+  description   String?
+  scheduledAt   DateTime?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  cancelledAt   DateTime?
+  completedAt   DateTime?
+
+  patient       Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  requestedBy   User          @relation("RequestedBy", fields: [requestedById], references: [id], onDelete: Restrict)
+  assignedTo    User?         @relation("AssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  radiographies Radiography[]
+
+  @@map("radiography_requests")
+  @@index([patientId])
+  @@index([requestedById])
+  @@index([assignedToId])
+  @@index([status])
+}
+
+model Radiography {
+  id           String   @id @default(uuid())
+  requestId    String
+  filePath     String
+  originalName String?
+  contentType  String?
+  fileSize     Int?
+
+  uploadedById String?
+  uploadedAt   DateTime @default(now())
+
+  aiResult     Json?
+  processedAt  DateTime?
+  checksum     String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  request      RadiographyRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  uploadedBy   User?              @relation("UploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@map("radiographs")
+  @@index([requestId])
+  @@index([uploadedById])
+}
