@@ -1,10 +1,12 @@
 import { Router, Request, Response } from 'express';
 
 import { CreateUserController } from './controllers/user/CreateUserController';
+import { AuthUserController } from './controllers/user/AuthUserController';
 
 const router = Router();
 
 // -- Rotas de User --
 router.post('/users', new CreateUserController().handle);
+router.post('/auth', new AuthUserController().handle);
 
 export { router };

@@ -111,7 +111,7 @@ model RadiographyRequest {
   requestedById String
   assignedToId  String?
 
-  status        RequestStatus @default(PENDING)
+  status        RequestStatus @default(WAITING_UPLOAD)
   modality      String?
   priority      Int?
   description   String?

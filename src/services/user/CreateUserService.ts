@@ -13,11 +13,11 @@ interface UserRequest {
 class CreateUserService {
   public async execute({email, password, name, address, phone}: UserRequest) {
 
-    if(!email) {
+    if(!email || !password || !name || !address || !phone) {
       throw new Error("Preencha os campos obrigatórios.");
     }
 
-    const userAlreadyExists = await prismaClient.user.findFirst({
+    const userAlreadyExists = await prismaClient.user.findUnique({
       where: { 
         email: email 
     }
@@ -36,7 +36,8 @@ class CreateUserService {
         passwordHash: passwordHash,
         address: address,
         phone: phone
-      }, select: {
+      }, 
+      select: {
         id: true,
         name: true,
         email: true,
