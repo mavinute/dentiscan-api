@@ -45,7 +45,7 @@ class CreatePatientService {
       data: {
         name,
         email,
-        birthDate: birthDate,
+        birthDate: new Date(birthDate),
         cpf,
         address,
         phone,
